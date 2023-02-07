@@ -29,7 +29,7 @@ export default function FlyingNotification({ messageText, messageType }: FlyingN
         type: messageType
       })
     }
-  }, [])
+  }, [messageText, messageType]);
 
   if (typeof document !== 'undefined') {
     return ReactDOM.createPortal(<>

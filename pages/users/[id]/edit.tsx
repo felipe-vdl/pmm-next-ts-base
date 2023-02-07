@@ -196,7 +196,7 @@ export const getServerSideProps: GetServerSideProps<UserCreateProps> = async (
       },
     });
     if (authUser.role === "USER") {
-      const queryParams = "?notificationMessage=Usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o&notificationType=error"
+      const queryParams = "?notificationMessage=O%20usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o%20para%20acessar%20a%20p%C3%A1gina.&notificationType=error"
       
       return {
         redirect: {
