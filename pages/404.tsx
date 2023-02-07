@@ -1,7 +1,12 @@
 import Link from "next/link";
+import Head from 'next/head';
 
 function FourOhFour() {
   return (
+    <>
+    <Head>
+      <title>Página não encontrada</title>
+    </Head>
     <div className="m-auto flex flex-col items-center dark:bg-dark-500 p-8 gap-4 rounded-lg shadow shadow-black/30">
       <h1 className="text-3xl">404 - A página não foi encontrada.</h1>
       <Link
@@ -11,6 +16,7 @@ function FourOhFour() {
         Página Inicial
       </Link>
     </div>
+    </>
   );
 }
 
