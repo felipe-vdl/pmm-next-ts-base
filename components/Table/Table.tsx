@@ -190,6 +190,7 @@ export default function Table<T>({
       <div className="mt-2 flex items-center gap-3 text-sm">
         <div className="flex gap-2">
           <button
+            aria-label="Primeira página"
             className="rounded border bg-zinc-300 p-1 text-light-50 hover:bg-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:text-zinc-100 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-800 dark:disabled:bg-zinc-500"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
@@ -212,6 +213,7 @@ export default function Table<T>({
             </svg>
           </button>
           <button
+            aria-label="Página anterior"
             className="rounded border bg-zinc-300 p-1 text-light-50 hover:bg-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:text-zinc-100 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-800 dark:disabled:bg-zinc-500"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
@@ -219,6 +221,7 @@ export default function Table<T>({
             Anterior
           </button>
           <button
+            aria-label="Próxima página"
             className="rounded border bg-zinc-300 p-1 text-light-50 hover:bg-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:text-zinc-100 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-800 dark:disabled:bg-zinc-500"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
@@ -226,6 +229,7 @@ export default function Table<T>({
             Próximo
           </button>
           <button
+            aria-label="Última página"
             className="rounded border bg-zinc-300 p-1 text-light-50 hover:bg-zinc-400 disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:text-zinc-100 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-800 dark:disabled:bg-zinc-500"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
