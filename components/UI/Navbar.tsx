@@ -37,13 +37,11 @@ export default function Navbar() {
             <ThemeToggler />
           </li>
           {status === "authenticated" && (
-            <li>
-              <div className="peer flex items-center self-stretch">
-                <button className="rounded-full bg-roxo py-1 px-3 text-3xl">
-                  {data.user.name.charAt(0)}
-                </button>
-              </div>
-              <div className="absolute left-[-1.5rem] top-[5.9rem] z-10 hidden w-[8rem] flex-col items-end border border-t-0 bg-light-500 text-base font-light text-light-50 shadow shadow-black/30 hover:flex peer-hover:flex dark:border-dark-500 dark:bg-dark-500 dark:text-dark-50 sm:top-[5.9rem] md:top-[5.9rem]">
+            <li className="group flex cursor-pointer items-center self-stretch">
+              <button className="rounded-full bg-roxo py-1 px-3 text-3xl">
+                {data.user.name.charAt(0)}
+              </button>
+              <div className="absolute left-[-1.5rem] top-[5.9rem] z-10 hidden w-[8rem] flex-col items-end border border-t-0 bg-light-500 text-base font-light text-light-50 shadow shadow-black/30 hover:flex group-hover:flex dark:border-dark-500 dark:bg-dark-500 dark:text-dark-50 sm:top-[5.9rem] md:top-[5.9rem]">
                 <Link
                   className="light:border-light-500 w-full border-b p-2 text-end hover:bg-light-900 dark:border-dark-900 dark:hover:bg-dark-900"
                   href="/changepassword"
