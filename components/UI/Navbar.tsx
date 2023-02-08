@@ -33,9 +33,11 @@ export default function Navbar() {
               </li>
             </>
           )}
-          <ThemeToggler />
+          <li>
+            <ThemeToggler />
+          </li>
           {status === "authenticated" && (
-            <>
+            <li>
               <div className="peer flex items-center self-stretch">
                 <button className="rounded-full bg-roxo py-1 px-3 text-3xl">
                   {data.user.name.charAt(0)}
@@ -55,7 +57,7 @@ export default function Navbar() {
                   Sair
                 </button>
               </div>
-            </>
+            </li>
           )}
         </ul>
       </div>

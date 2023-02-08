@@ -7,6 +7,7 @@ export default function Footer() {
         <li>© 2023 Equipe de Desenvolvimento de Sistemas</li>
         <li>
           <a
+            aria-label="Time de desenvolvimento"
             rel="noreferrer"
             href="http://devs.mesquita.rj.gov.br/"
             target="_blank"
