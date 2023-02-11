@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAtom } from "jotai";
 import { notificationAtom } from "@/store/store";
 
-import { GetServerSideProps } from "next";
+import { GetServerSideProps } from "next/types";
 import { AppDialog, AppNotification, UserInfo } from "@/types/interfaces";
 
 import { getServerSession } from "next-auth";

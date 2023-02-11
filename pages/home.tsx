@@ -1,11 +1,12 @@
 import { getServerSession } from "next-auth";
+import { GetServerSideProps } from "next/types";
 import { authOptions } from "./api/auth/[...nextauth]";
 
 const HomePage = () => {
   return <div>HomePage</div>;
 };
 
-export const getServerSideProps = async (context) => {
+export const getServerSideProps: GetServerSideProps  = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions);
 
   if (!session) {

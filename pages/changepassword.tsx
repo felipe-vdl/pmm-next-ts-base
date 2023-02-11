@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { AppNotification } from "@/types/interfaces";
-import { GetServerSideProps } from "next";
+
 import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]";
 import { prisma } from "../db";
+
+import { AppNotification } from "@/types/interfaces";
+import { GetServerSideProps } from "next";
+
 import Head from "next/head";
 
 interface ChangePasswordProps {
@@ -91,11 +94,10 @@ const ChangePasswordPage = ({ user }: ChangePasswordProps) => {
         >
           {notification.message && (
             <div
-              className={`flex w-full items-center rounded-[8px] px-3 py-1 text-center ${
-                notification.type === "error"
+              className={`flex w-full items-center rounded-[8px] px-3 py-1 text-center ${notification.type === "error"
                   ? "bg-red-300 text-red-800"
                   : "bg-green-300 text-green-800"
-              }`}
+                }`}
             >
               <p className="mx-auto">{notification.message}</p>
               <span
