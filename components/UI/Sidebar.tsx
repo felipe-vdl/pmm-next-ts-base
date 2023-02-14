@@ -18,7 +18,7 @@ export default function Sidebar() {
             title="Expandir/Contrair"
             onClick={() => setSidebarIsCollapsed((st) => !st)}
             className={`${
-              sidebarIsCollapsed ? "mx-auto" : "ml-auto mr-2"
+              sidebarIsCollapsed ? "mx-2" : "ml-auto mr-2"
             } mt-2 mb-1 rounded bg-zinc-200 p-2 text-zinc-800 hover:bg-zinc-300 dark:bg-dark-500 dark:text-white hover:dark:bg-zinc-600`}
           >
             <svg
