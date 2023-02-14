@@ -3,9 +3,9 @@ import Router from "next/router";
 import Link from "next/link";
 
 import { useAtom } from "jotai";
-import { notificationAtom } from "@/store/store";
+import { notificationAtom } from "@/store";
 
-import { GetServerSideProps } from "next/types";
+import { GetServerSideProps } from "next";
 import { AppDialog, AppNotification, UserInfo } from "@/types/interfaces";
 
 import { getServerSession } from "next-auth";
@@ -198,12 +198,14 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
       cell: (info) => info.getValue(),
       sortingFn: "basic",
       filterFn: "numToString",
+      size: 44
     }),
     columnHelper.accessor("name", {
       header: "Nome",
       cell: (info) => info.getValue(),
       sortingFn: "alphanumeric",
       filterFn: "includesString",
+      size: 71
     }),
     columnHelper.accessor(row => {
       switch (row.role) {
@@ -219,12 +221,14 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
       cell: (info) => info.getValue(),
       sortingFn: "alphanumeric",
       filterFn: "includesString",
+      size: 90
     }),
     columnHelper.accessor("email", {
       header: "Email",
       cell: (info) => info.getValue(),
       sortingFn: "alphanumeric",
       filterFn: "includesString",
+      size: 210
     }),
     columnHelper.accessor(
       (row) =>
@@ -240,6 +244,7 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
         sortingFn: "stringDate",
         sortDescFirst: true,
         filterFn: "includesString",
+        size: 105
       }
     ),
     columnHelper.display({
@@ -254,6 +259,7 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
           authUser={user}
         />
       ),
+      size: 130
     }),
   ];
   const [notification, setNotification] =
@@ -262,7 +268,7 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
   return (
     <>
       <Head>
-        <title>Usuários</title>
+        <title>Lista de Usuários</title>
         <meta
           name="description"
           content="Sistema Gerenciador de Projetos — Prefeitura de Mesquita."
@@ -298,8 +304,7 @@ export const getServerSideProps: GetServerSideProps<UserIndexProps> = async (
       },
     });
     if (authUser.role === "USER") {
-      const queryParams =
-        "?notificationMessage=O%20usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o%20para%20acessar%20a%20p%C3%A1gina.&notificationType=error";
+      const queryParams = "?notificationMessage=Usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o&notificationType=error"
 
       return {
         redirect: {

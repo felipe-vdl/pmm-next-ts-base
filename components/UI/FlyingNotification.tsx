@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import { AppNotification } from "@/types/interfaces";
 import { useAtom } from "jotai";
-import { notificationAtom } from "../../store/store";
+import { notificationAtom } from "../../store";
 
 export default function FlyingNotification() {
   const notificationInitialState: AppNotification = {
