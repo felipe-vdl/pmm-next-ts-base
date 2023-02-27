@@ -5,12 +5,27 @@ import Link from "next/link";
 import ThemeToggler from "./ThemeToggler";
 import Router from "next/router";
 
+import { useQuery } from "@tanstack/react-query";
+import { UserInfo } from "@/types/interfaces";
+import getUserInfo from "@/api/getUserInfo";
+
 export default function Navbar() {
   const { data, status } = useSession();
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     Router.push("/login");
   };
+
+  const userQuery = useQuery<UserInfo>({
+    queryFn: getUserInfo,
+    queryKey: ["userInfo"],
+    onSuccess: async (data) => {
+      if (!data.is_enabled) {
+        await signOut({ redirect: false });
+        Router.push("/login");
+      }
+    },
+  });
 
   return (
     <header
