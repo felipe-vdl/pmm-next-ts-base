@@ -1,13 +1,21 @@
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Dropdown from "./Dropdown";
+import { useQuery } from "@tanstack/react-query";
+
+import { UserInfo } from "@/types/interfaces";
+import getUserInfo from "@/api/getUserInfo";
 
 export default function Sidebar() {
-  const { data: session } = useSession();
   const [sidebarIsCollapsed, setSidebarIsCollapsed] = useState<boolean>(true);
 
+  const userQuery = useQuery<UserInfo>({
+    queryFn: getUserInfo,
+    queryKey: ["userInfo"]
+  });
+
   return (
-    <div className="z-20 sticky left-[-0.1%] flex bg-light-900 text-light-50 shadow shadow-black/30 dark:bg-dark-900 dark:text-dark-50">
+    <div className="sticky left-[-0.1%] z-20 flex bg-light-900 text-light-50 shadow shadow-black/30 dark:bg-dark-900 dark:text-dark-50">
       <ul
         className={`flex ${
           sidebarIsCollapsed ? "" : "sm:min-w-[12rem]"
@@ -36,9 +44,9 @@ export default function Sidebar() {
             </svg>
           </button>
         </li>
-        {session &&
-          (session.user.role === "ADMIN" ||
-            session.user.role === "SUPERADMIN") && (
+        {userQuery.data &&
+          (userQuery.data.role === "ADMIN" ||
+            userQuery.data.role === "SUPERADMIN") && (
             <li>
               <Dropdown
                 sidebarIsCollapsed={sidebarIsCollapsed}
