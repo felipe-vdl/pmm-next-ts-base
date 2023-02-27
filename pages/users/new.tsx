@@ -5,39 +5,40 @@ import { authOptions } from "../api/auth/[...nextauth]";
 
 import { prisma } from "@/db";
 import { Role } from "@prisma/client";
-import { UserInfo } from "@/types/interfaces";
+import { Message, UserInfo } from "@/types/interfaces";
 
 import { AppNotification } from "@/types/interfaces";
 import React, { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface UserCreateProps {
   user: UserInfo;
 }
 
+interface NewUserForm {
+  name: string;
+  email: string;
+  role: string;
+}
+
 const UserCreate = ({ user }: UserCreateProps) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const notificationInitialState: AppNotification = { message: "", type: "" };
   const [notification, setNotification] = useState<AppNotification>(
     notificationInitialState
   );
-  const formInitalState = {
+  const formInitalState: NewUserForm = {
     name: "",
     email: "",
     role: "",
   };
+  const [form, setForm] = useState<NewUserForm>(formInitalState);
 
-  const [form, setForm] = useState<{
-    name: string;
-    email: string;
-    role: string;
-  }>(formInitalState);
+  const queryClient = useQueryClient();
 
-  const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
-    evt.preventDefault();
-    try {
-      if (Object.values(form).every((entry) => entry.trim().length > 0)) {
+  const newUserMutation = useMutation({
+    mutationFn: async (variables: NewUserForm) => {
+      try {
         setNotification(notificationInitialState);
-        setIsLoading(true);
         const response = await fetch("/api/user/register", {
           method: "POST",
           headers: {
@@ -52,22 +53,35 @@ const UserCreate = ({ user }: UserCreateProps) => {
         }
 
         const data = await response.json();
-        setNotification({ type: "success", message: data.message });
-        setForm(formInitalState);
-        setIsLoading(false);
-      } else {
-        setNotification({
-          type: "error",
-          message: "Preencha as informações.",
-        });
-        setIsLoading(false);
+        return data;
+      } catch (err) {
+        throw err;
       }
-    } catch (error) {
+    },
+    onSuccess: (data: Message) => {
+      queryClient.invalidateQueries(["users"]);
+      setNotification({ type: "success", message: data.message });
+      setForm(formInitalState);
+    },
+    onError: (error: { message: string }) => {
+      if (error?.message) {
+        setNotification({
+          message: error.message ?? "Ocorreu um erro.",
+          type: "error",
+        });
+      }
+    },
+  });
+
+  const handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
+    evt.preventDefault();
+    if (Object.values(form).every((entry) => entry.trim().length > 0)) {
+      newUserMutation.mutate(form);
+    } else {
       setNotification({
-        message: error.message,
         type: "error",
+        message: "Preencha as informações.",
       });
-      setIsLoading(false);
     }
   };
 
@@ -84,7 +98,7 @@ const UserCreate = ({ user }: UserCreateProps) => {
       <Head>
         <title>Novo Usuário</title>
       </Head>
-      <div className="m-auto w-full sm:w-[25rem] md:w-[30rem] lg:w-[38rem] flex flex-col items-center rounded-[12px] bg-light-500 text-white shadow shadow-black/20 dark:bg-dark-500">
+      <div className="m-auto flex w-full flex-col items-center rounded-[12px] bg-light-500 text-white shadow shadow-black/20 dark:bg-dark-500 sm:w-[25rem] md:w-[30rem] lg:w-[38rem]">
         <div className="w-full rounded-t-[12px] bg-dourado py-1 text-center">
           <h2 className="text-2xl font-light">Novo Usuário</h2>
         </div>
@@ -144,10 +158,10 @@ const UserCreate = ({ user }: UserCreateProps) => {
             </select>
           </div>
           <button
-            disabled={isLoading}
+            disabled={newUserMutation.isLoading}
             className="rounded-[10px] bg-roxo p-1 text-xl font-light hover:bg-indigo-700 disabled:bg-indigo-400"
           >
-            {isLoading ? "Criando usuário..." : "Criar"}
+            {newUserMutation.isLoading ? "Criando usuário..." : "Criar"}
           </button>
         </form>
       </div>
@@ -175,8 +189,9 @@ export const getServerSideProps: GetServerSideProps<UserCreateProps> = async (
       },
     });
     if (authUser.role === "USER") {
-      const queryParams = "?notificationMessage=O%20usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o%20para%20acessar%20a%20p%C3%A1gina.&notificationType=error"
-      
+      const queryParams =
+        "?notificationMessage=O%20usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o%20para%20acessar%20a%20p%C3%A1gina.&notificationType=error";
+
       return {
         redirect: {
           permanent: false,

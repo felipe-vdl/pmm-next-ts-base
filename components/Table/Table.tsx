@@ -53,7 +53,7 @@ export default function Table<T>({
         const valueA = rowA.getValue(columnId) as string;
         const valueB = rowB.getValue(columnId) as string;
 
-        const [dateA, timeA] = valueA.split(" ");
+        const [dateA, timeA] = valueA.replace(",", "").split(" ");
         const a = new Date(
           +dateA.split("/")[2],
           +dateA.split("/")[1] - 1,
@@ -63,7 +63,7 @@ export default function Table<T>({
           +timeA.split(":")[2]
         );
 
-        const [dateB, timeB] = valueB.split(" ");
+        const [dateB, timeB] = valueB.replace(",", "").split(" ");
         const b = new Date(
           +dateB.split("/")[2],
           +dateB.split("/")[1] - 1,

@@ -4,76 +4,92 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../api/auth/[...nextauth]";
 
 import { prisma } from "@/db";
-import { Role } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { UserInfo } from "@/types/interfaces";
 
-import { AppNotification } from "@/types/interfaces";
+import { AppNotification, Message } from "@/types/interfaces";
 import React, { useState } from "react";
 import Router from "next/router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-interface UserCreateProps {
+interface EditUserProps {
   user: UserInfo;
 }
 
-const UserCreate = ({ user }: UserCreateProps) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+interface EditUserForm {
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface EditUserResponse {
+  updatedUser: Pick<User, "name" | "email" | "role">;
+  message: string;
+}
+
+const EditUser = ({ user }: EditUserProps) => {
   const notificationInitialState: AppNotification = { message: "", type: "" };
   const [notification, setNotification] = useState<AppNotification>(
     notificationInitialState
   );
-  const formInitalState = {
+  const formInitalState: EditUserForm = {
     name: user.name,
     email: user.email,
     role: user.role,
   };
 
-  const [form, setForm] = useState<{
-    name: string;
-    email: string;
-    role: string;
-  }>(formInitalState);
+  const [form, setForm] = useState<EditUserForm>(formInitalState);
 
-  const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
-    evt.preventDefault();
-    try {
-      if (Object.values(form).every((entry) => entry.trim().length > 0)) {
-        setNotification(notificationInitialState);
-        setIsLoading(true);
-        const response = await fetch(`/api/user/${user.id}/update`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            id: user.id,
-            name: form.name,
-            email: form.email,
-            role: form.role,
-          }),
-        });
+  const queryClient = useQueryClient();
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message);
-        }
+  const editUserMutation = useMutation({
+    mutationFn: async (variables: EditUserForm) => {
+      const response = await fetch(`/api/user/${user.id}/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: user.id,
+          name: form.name,
+          email: form.email,
+          role: form.role,
+        }),
+      });
 
-        const data = await response.json();
-        setNotification({ type: "success", message: data.message });
-        setForm(data.updatedUser);
-        setIsLoading(false);
-      } else {
-        setNotification({
-          type: "error",
-          message: "Preencha as informações.",
-        });
-        setIsLoading(false);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
       }
-    } catch (error) {
+
+      const data = await response.json();
+      return data as Message;
+    },
+    onMutate: () => {
+      setNotification(notificationInitialState);
+    },
+    onSuccess: (data: EditUserResponse) => {
+      setNotification({ type: "success", message: data.message });
+      setForm(data.updatedUser);
+      queryClient.invalidateQueries(["users"]);
+    },
+    onError: (error: { message: string }) => {
       setNotification({
         message: error.message,
         type: "error",
       });
-      setIsLoading(false);
+    },
+  });
+
+  const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
+    evt.preventDefault();
+    if (Object.values(form).every((entry) => entry.trim().length > 0)) {
+      editUserMutation.mutate(form);
+    } else {
+      setNotification({
+        type: "error",
+        message: "Preencha as informações.",
+      });
     }
   };
 
@@ -90,7 +106,7 @@ const UserCreate = ({ user }: UserCreateProps) => {
       <Head>
         <title>Editar Usuário</title>
       </Head>
-      <div className="m-auto w-full sm:w-[25rem] md:w-[30rem] lg:w-[38rem] flex-col items-center rounded-[12px] bg-light-500 text-white shadow shadow-black/20 dark:bg-dark-500">
+      <div className="m-auto w-full flex-col items-center rounded-[12px] bg-light-500 text-white shadow shadow-black/20 dark:bg-dark-500 sm:w-[25rem] md:w-[30rem] lg:w-[38rem]">
         <div className="w-full rounded-t-[12px] bg-dourado py-1 text-center">
           <h2 className="text-2xl font-light">Editar Usuário</h2>
         </div>
@@ -151,13 +167,13 @@ const UserCreate = ({ user }: UserCreateProps) => {
           </div>
           <div className="flex w-full gap-8">
             <button
-              disabled={isLoading}
+              disabled={editUserMutation.isLoading}
               className="flex-1 rounded-[10px] bg-roxo p-1 text-xl font-light hover:bg-indigo-700 disabled:bg-indigo-400"
             >
-              {isLoading ? "Editando usuário..." : "Editar"}
+              {editUserMutation.isLoading ? "Editando usuário..." : "Editar"}
             </button>
             <button
-              onClick={() => Router.replace('/users')}
+              onClick={() => Router.replace("/users")}
               className="flex-1 rounded-[10px] bg-zinc-500 p-1 text-center text-xl font-light hover:bg-zinc-400 disabled:bg-indigo-400"
             >
               Cancelar
@@ -169,7 +185,7 @@ const UserCreate = ({ user }: UserCreateProps) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps<UserCreateProps> = async (
+export const getServerSideProps: GetServerSideProps<EditUserProps> = async (
   context
 ) => {
   const session = await getServerSession(context.req, context.res, authOptions);
@@ -196,8 +212,9 @@ export const getServerSideProps: GetServerSideProps<UserCreateProps> = async (
       },
     });
     if (authUser.role === "USER") {
-      const queryParams = "?notificationMessage=O%20usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o%20para%20acessar%20a%20p%C3%A1gina.&notificationType=error"
-      
+      const queryParams =
+        "?notificationMessage=O%20usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o%20para%20acessar%20a%20p%C3%A1gina.&notificationType=error";
+
       return {
         redirect: {
           permanent: false,
@@ -221,5 +238,5 @@ export const getServerSideProps: GetServerSideProps<UserCreateProps> = async (
   }
 };
 
-UserCreate.layout = "dashboard";
-export default UserCreate;
+EditUser.layout = "dashboard";
+export default EditUser;

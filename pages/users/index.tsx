@@ -6,7 +6,12 @@ import { useAtom } from "jotai";
 import { notificationAtom } from "@/store";
 
 import { GetServerSideProps } from "next";
-import { AppDialog, AppNotification, UserInfo } from "@/types/interfaces";
+import {
+  AppDialog,
+  AppNotification,
+  Message,
+  UserInfo,
+} from "@/types/interfaces";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]";
@@ -18,6 +23,9 @@ import Table from "@/components/Table/Table";
 import { createColumnHelper } from "@tanstack/react-table";
 import ConfirmationDialog from "@/components/UI/ConfirmationDialog";
 import FlyingNotification from "@/components/UI/FlyingNotification";
+import { useQuery } from "@tanstack/react-query";
+import getUsers from "@/api/getUsers";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface RowActionsProps {
   user: { id: number; is_enabled: boolean };
@@ -33,6 +41,62 @@ const RowActions = ({ user }: RowActionsProps) => {
     reject: () => {},
   };
   const [dialog, setDialog] = useState<AppDialog>(dialogInitialState);
+
+  const queryClient = useQueryClient();
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (id: string | number) => {
+      const response = await fetch(`/api/user/${id}/resetpassword`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const data = await response.json();
+      return data as Message;
+    },
+    onMutate: () => {
+      setDialog(dialogInitialState);
+    },
+    onSuccess: (data: Message) => {
+      setNotification({ type: "success", message: data.message });
+      queryClient.invalidateQueries(["users"]);
+    },
+    onError: (error: Message) => {
+      setNotification({ type: "error", message: error.message });
+      setDialog(dialogInitialState);
+    },
+  });
+
+  const deactivateUserMutation = useMutation({
+    mutationFn: async (id: string | number) => {
+      const response = await fetch(`/api/user/${id}/deactivate`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const data = await response.json();
+      return data as Message;
+    },
+    onMutate: () => {
+      setDialog(dialogInitialState);
+    },
+    onSuccess: (data: Message) => {
+      setNotification({ type: "success", message: data.message });
+      queryClient.invalidateQueries(["users"]);
+    },
+    onError: (error: Message) => {
+      setNotification({ type: "error", message: error.message });
+      setDialog(dialogInitialState);
+    },
+  });
 
   const handleConfirmation = (
     accept: () => void,
@@ -50,45 +114,11 @@ const RowActions = ({ user }: RowActionsProps) => {
   };
 
   const handleResetPassword = async () => {
-    try {
-      setDialog(dialogInitialState);
-      const response = await fetch(`/api/user/${user.id}/resetpassword`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      const data = await response.json();
-      Router.replace(Router.asPath);
-      setNotification({ type: "success", message: data.message });
-    } catch (error) {
-      setNotification({ type: "error", message: error.message });
-      setDialog(dialogInitialState);
-    }
+    resetPasswordMutation.mutate(user.id);
   };
 
   const handleDeactivate = async () => {
-    try {
-      setDialog(dialogInitialState);
-      const response = await fetch(`/api/user/${user.id}/deactivate`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      const data = await response.json();
-      Router.replace(Router.asPath);
-      setNotification({ type: "success", message: data.message });
-    } catch (error) {
-      setNotification({ type: "error", message: error.message });
-      setDialog(dialogInitialState);
-    }
+    deactivateUserMutation.mutate(user.id);
   };
 
   return (
@@ -187,10 +217,16 @@ const RowActions = ({ user }: RowActionsProps) => {
 };
 
 interface UserIndexProps {
-  users: User[];
+  /* users: User[]; */
   user: UserInfo;
 }
-const UserCreate = ({ user, users }: UserIndexProps) => {
+const UserCreate = ({ user /* users */ }: UserIndexProps) => {
+  const usersQuery = useQuery<User[]>({
+    queryFn: getUsers,
+    queryKey: ["users"],
+    placeholderData: [],
+  });
+
   const columnHelper = createColumnHelper<User>();
   const columns = [
     columnHelper.accessor("id", {
@@ -198,41 +234,44 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
       cell: (info) => info.getValue(),
       sortingFn: "basic",
       filterFn: "numToString",
-      size: 44
+      size: 44,
     }),
     columnHelper.accessor("name", {
       header: "Nome",
       cell: (info) => info.getValue(),
       sortingFn: "alphanumeric",
       filterFn: "includesString",
-      size: 71
+      size: 71,
     }),
-    columnHelper.accessor(row => {
-      switch (row.role) {
-        case "USER":
-          return "Usuário";
-        case "ADMIN":
-          return "Administrador";
-        case "SUPERADMIN":
-          return "Super Administrador"
+    columnHelper.accessor(
+      (row) => {
+        switch (row.role) {
+          case "USER":
+            return "Usuário";
+          case "ADMIN":
+            return "Administrador";
+          case "SUPERADMIN":
+            return "Super Administrador";
+        }
+      },
+      {
+        header: "Nível",
+        cell: (info) => info.getValue(),
+        sortingFn: "alphanumeric",
+        filterFn: "includesString",
+        size: 90,
       }
-    }, {
-      header: "Nível",
-      cell: (info) => info.getValue(),
-      sortingFn: "alphanumeric",
-      filterFn: "includesString",
-      size: 90
-    }),
+    ),
     columnHelper.accessor("email", {
       header: "Email",
       cell: (info) => info.getValue(),
       sortingFn: "alphanumeric",
       filterFn: "includesString",
-      size: 210
+      size: 210,
     }),
     columnHelper.accessor(
       (row) =>
-        row.created_at.toLocaleDateString("pt-br", {
+        new Date(row.created_at).toLocaleDateString("pt-br", {
           hour: "numeric",
           minute: "numeric",
           second: "numeric",
@@ -240,11 +279,11 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
       {
         id: "created_at",
         header: "Data de Criação",
-        cell: (info) => info.getValue().split(" ")[0],
+        cell: (info) => info.getValue().replace(",", "").split(" ")[0],
         sortingFn: "stringDate",
         sortDescFirst: true,
         filterFn: "includesString",
-        size: 105
+        size: 105,
       }
     ),
     columnHelper.display({
@@ -259,7 +298,7 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
           authUser={user}
         />
       ),
-      size: 130
+      size: 130,
     }),
   ];
   const [notification, setNotification] =
@@ -277,7 +316,7 @@ const UserCreate = ({ user, users }: UserIndexProps) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="w-full">
-        <Table<User> data={users} columns={columns} />
+        <Table<User> data={usersQuery.data} columns={columns} />
       </div>
       {notification.message && <FlyingNotification />}
     </>
@@ -304,7 +343,8 @@ export const getServerSideProps: GetServerSideProps<UserIndexProps> = async (
       },
     });
     if (authUser.role === "USER") {
-      const queryParams = "?notificationMessage=Usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o&notificationType=error"
+      const queryParams =
+        "?notificationMessage=Usu%C3%A1rio%20n%C3%A3o%20tem%20permiss%C3%A3o&notificationType=error";
 
       return {
         redirect: {

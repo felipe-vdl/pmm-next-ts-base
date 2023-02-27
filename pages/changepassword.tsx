@@ -2,70 +2,74 @@ import React, { useState } from "react";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]";
-import { prisma } from "../db";
 
-import { AppNotification } from "@/types/interfaces";
+import { AppNotification, Message } from "@/types/interfaces";
 import { GetServerSideProps } from "next";
 
 import Head from "next/head";
+import { useMutation } from "@tanstack/react-query";
 
-interface ChangePasswordProps {
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-  };
+interface ChangePasswordForm {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }
 
-const ChangePasswordPage = ({ user }: ChangePasswordProps) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+const ChangePasswordPage = () => {
   const notificationInitialState: AppNotification = { message: "", type: "" };
   const [notification, setNotification] = useState<AppNotification>(
     notificationInitialState
   );
-  const formInitalState = {
+  const formInitalState: ChangePasswordForm = {
     currentPassword: "",
     newPassword: "",
     confirmNewPassword: "",
   };
 
-  const [form, setForm] = useState<{
-    currentPassword: string;
-    newPassword: string;
-    confirmNewPassword: string;
-  }>(formInitalState);
+  const [form, setForm] = useState<ChangePasswordForm>(formInitalState);
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (variables: ChangePasswordForm) => {
+      const response = await fetch("/api/user/changepassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(variables),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const data = (await response.json()) as Message;
+      return data;
+    },
+    onSuccess: (data: Message) => {
+      setNotification({ type: "success", message: data.message });
+      setForm(formInitalState);
+    },
+    onMutate: () => {
+      setNotification(notificationInitialState);
+    },
+    onError: (err: Message) => {
+      if (err.message) {
+        setNotification({ type: "error", message: err.message });
+      }
+    },
+  });
 
   const handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
-
     try {
       if (Object.values(form).every((entry) => entry.trim().length > 0)) {
-        setNotification(notificationInitialState);
-        setIsLoading(true);
-        const response = await fetch("/api/user/changepassword", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message);
-        }
-
-        const data = await response.json();
-        setNotification({ type: "success", message: data.message });
-        setForm(formInitalState);
-        setIsLoading(false);
+        changePasswordMutation.mutate(form);
       } else {
         setNotification({
           type: "error",
           message: "Preencha as informações.",
         });
-        setIsLoading(false);
       }
     } catch (error) {
       setNotification({
@@ -84,7 +88,7 @@ const ChangePasswordPage = ({ user }: ChangePasswordProps) => {
       <Head>
         <title>Alterar Senha</title>
       </Head>
-      <div className="m-auto w-full sm:w-[25rem] md:w-[30rem] lg:w-[38rem] flex flex-col items-center rounded-[12px] bg-light-500 text-white shadow shadow-black/20 dark:bg-dark-500">
+      <div className="m-auto flex w-full flex-col items-center rounded-[12px] bg-light-500 text-white shadow shadow-black/20 dark:bg-dark-500 sm:w-[25rem] md:w-[30rem] lg:w-[38rem]">
         <div className="w-full rounded-t-[12px] bg-dourado py-1 text-center">
           <h2 className="text-2xl font-light">Alterar Senha</h2>
         </div>
@@ -94,10 +98,11 @@ const ChangePasswordPage = ({ user }: ChangePasswordProps) => {
         >
           {notification.message && (
             <div
-              className={`flex w-full items-center rounded-[8px] px-3 py-1 text-center ${notification.type === "error"
+              className={`flex w-full items-center rounded-[8px] px-3 py-1 text-center ${
+                notification.type === "error"
                   ? "bg-red-300 text-red-800"
                   : "bg-green-300 text-green-800"
-                }`}
+              }`}
             >
               <p className="mx-auto">{notification.message}</p>
               <span
@@ -135,10 +140,10 @@ const ChangePasswordPage = ({ user }: ChangePasswordProps) => {
             />
           </div>
           <button
-            disabled={isLoading}
+            disabled={changePasswordMutation.isLoading}
             className="rounded-[10px] bg-roxo p-1 text-xl font-light hover:bg-indigo-500 disabled:bg-indigo-400"
           >
-            {isLoading ? "Aplicando..." : "Aplicar"}
+            {changePasswordMutation.isLoading ? "Aplicando..." : "Aplicar"}
           </button>
         </form>
       </div>
@@ -146,9 +151,7 @@ const ChangePasswordPage = ({ user }: ChangePasswordProps) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps<
-  ChangePasswordProps
-> = async (context) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions);
 
   if (!session) {
@@ -160,22 +163,8 @@ export const getServerSideProps: GetServerSideProps<
       props: {},
     };
   } else {
-    const authUser = await prisma.user.findFirst({
-      where: {
-        id: +session.user.id,
-      },
-    });
-
     return {
-      props: {
-        user: {
-          id: authUser.id,
-          name: authUser.name,
-          email: authUser.email,
-          role: authUser.role,
-          is_enabled: authUser.is_enabled,
-        },
-      },
+      props: {},
     };
   }
 };
